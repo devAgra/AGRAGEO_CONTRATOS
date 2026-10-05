@@ -684,23 +684,43 @@ ${email ? '✉️ ' + email : ''}`;
     }
   }
 
+  /* ── Data por extenso (pt-BR), ex.: "29 de setembro de 2026" ── */
+  function dataPorExtenso(d = new Date()) {
+    const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    return `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
+  }
+
+  /* ── Botão ✕ — remove a linha de Local e Data do documento ao clicar (todos os módulos) ── */
+  const SIG_X_BTN_HTML = '<button type="button" class="sig-x-btn" title="Remover local e data deste documento" onclick="event.preventDefault();event.stopPropagation();var t=this.closest(\'.ld-line\')||this.parentElement;t.classList.add(\'is-removed\');this.remove();">&#10005;</button>';
+
+  /* ── Local e data padronizado (todos os módulos): cidade + data por extenso, editável, com ✕ para remover ── */
+  function localDataHtml() {
+    return `
+    <div class="ld-line" style="position:relative;text-align:right;">
+      ${SIG_X_BTN_HTML}
+      <span class="md-local-data" contenteditable="true" style="display:inline-block;font-size:0.86rem;color:#334155;margin:34px 0 6px;">${EMPRESA.cidade}, ${dataPorExtenso()}.</span>
+    </div>`;
+  }
+
   /* ── Signatures (shared) ── */
   function signaturesHtml(clientName = '') {
     const hoje = new Date().toLocaleDateString('pt-BR');
-    return `
-    <div class="md-sigs" style="margin-top: 40px;">
+    return `${localDataHtml()}
+    <div class="md-sigs" style="margin-top: 24px;">
       <div class="md-sig">
         <div class="md-sig-line"></div>
         <div class="md-sig-name">${EMPRESA.nome}</div>
         <div class="md-sig-info"><input class="doc-inp" placeholder="CREA-MT Nº" style="text-align:center;font-size:0.74rem;width:160px;margin:auto;display:block"></div>
         <div class="md-sig-info" style="font-weight:700;color:#1e3a5f">${EMPRESA.fantasia}</div>
         <div class="md-sig-info">CNPJ: ${EMPRESA.cnpj}</div>
+        <div class="md-sig-info" style="font-weight:800;color:#1e3a5f">CONTRATADA</div>
       </div>
       <div class="md-sig">
         <div class="md-sig-line"></div>
         <div class="md-sig-name"><input class="doc-inp" value="${clientName}" placeholder="Nome do Representante" style="text-align:center;margin:auto;display:block"></div>
         <div class="md-sig-info"><input class="doc-inp" placeholder="CPF / CNPJ" style="text-align:center;font-size:0.74rem;color:#475569;margin:auto;display:block"></div>
         <div class="md-sig-info"><input class="doc-inp" placeholder="Empresa" style="text-align:center;font-size:0.74rem;color:#475569;margin:auto;display:block"></div>
+        <div class="md-sig-info" style="font-weight:800;color:#1e3a5f">CONTRATANTE</div>
       </div>
     </div>`;
   }
@@ -959,6 +979,7 @@ ${email ? '✉️ ' + email : ''}`;
           <div class="md-h2">7. Do Foro</div>
           <div class="md-p">Fica eleito o foro da Comarca de <strong>Várzea Grande – MT</strong> para dirimir quaisquer litígios oriundos deste instrumento, com renúncia expressa a qualquer outro.</div>
 
+          ${localDataHtml()}
           <div class="md-sigs">
             <div class="md-sig">
               <div class="md-sig-line"></div>
@@ -1050,6 +1071,7 @@ ${email ? '✉️ ' + email : ''}`;
           <div class="md-h2">5. Do Foro</div>
           <div class="md-p">As partes elegem o foro de <strong>Várzea Grande - MT</strong> como cabível para dirimir contenciosos oriundos desta parceria técnica.</div>
 
+          ${localDataHtml()}
           <div class="md-sigs">
             <div class="md-sig">
               <div class="md-sig-line"></div>
@@ -1061,7 +1083,7 @@ ${email ? '✉️ ' + email : ''}`;
               <div class="md-sig-line"></div>
               <div class="md-sig-name">${profNome}</div>
               <div class="md-sig-info">CPF/CNPJ: ${profCpf}</div>
-              <div class="md-sig-info">CONTRATADA (Especialista)</div>
+              <div class="md-sig-info">CONTRATADO(A) (Especialista)</div>
             </div>
           </div>
 
@@ -1171,7 +1193,10 @@ ${email ? '✉️ ' + email : ''}`;
 
         /* Evita quebrar assinaturas e tabelas */
         #ag-print-area .md-sigs,
+        #ag-print-area .md-local-data,
+        #ag-print-area .ld-line,
         #ag-print-area .doc-sigs { break-inside: avoid; page-break-inside: avoid; }
+        #ag-print-area .sig-x-btn { display: none !important; }
         #ag-print-area tr       { break-inside: avoid; page-break-inside: avoid; }
         #ag-print-area .doc-header { break-inside: avoid; }
       }
@@ -1261,6 +1286,7 @@ ${email ? '✉️ ' + email : ''}`;
         .sig-name{font-size:9pt;font-weight:700}
         .sig-doc{font-size:8pt;color:#64748b}
         .footer{font-size:8pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:32px}
+        .ld-line{position:relative;text-align:right}.ld-line.is-removed{display:none!important}.sig-x-btn{display:none;position:absolute;top:-4px;right:0;width:22px;height:22px;line-height:20px;text-align:center;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#94a3b8;font-size:12px;font-weight:900;cursor:pointer;padding:0;z-index:5}.ld-line:hover .sig-x-btn{display:block}.sig-x-btn:hover{background:#fef2f2;border-color:#ef4444;color:#ef4444}@media print{.sig-x-btn{display:none!important}}
         @media print{body{padding:20px}}
       </style></head><body>
       <div class="hdr">
@@ -1288,13 +1314,16 @@ ${email ? '✉️ ' + email : ''}`;
       <div style="font-size:9pt;color:#475569;margin-top:8px">
         Por ser verdade, firmamos o presente recibo.
       </div>
+      <div class="ld-line" style="position:relative;text-align:right;">${SIG_X_BTN_HTML}<span style="display:inline-block;font-size:10pt;color:#334155;margin-top:26px" contenteditable="true">${EMPRESA.cidade}, ${dataPorExtenso()}.</span></div>
       <div class="sigs">
         <div class="sig"><div class="sig-line"></div>
         <div class="sig-name">${prefill.cliente || 'CONTRATANTE'}</div>
-        <div class="sig-doc">${prefill.cpf_cnpj || ''}</div></div>
+        <div class="sig-doc">${prefill.cpf_cnpj || ''}</div>
+        <div class="sig-doc" style="font-weight:700;color:#1e3a5f">CONTRATANTE</div></div>
         <div class="sig"><div class="sig-line"></div>
         <div class="sig-name">${EMPRESA.nome}</div>
-        <div class="sig-doc">AGRAGEO CONSULTORIA | CREA MT-6780/D</div></div>
+        <div class="sig-doc">AGRAGEO CONSULTORIA | CREA MT-6780/D</div>
+        <div class="sig-doc" style="font-weight:700;color:#1e3a5f">CONTRATADO / EMITENTE</div></div>
       </div>
       <div class="footer">
         ${EMPRESA.fantasia} | ${EMPRESA.endereco}, ${EMPRESA.cidade} | ${EMPRESA.celular} | ${EMPRESA.email} | ${EMPRESA.site}
@@ -1424,6 +1453,7 @@ ${email ? '✉️ ' + email : ''}`;
         .sig{text-align:center}.sig-line{border-top:1px solid #334155;margin-bottom:6px}
         .sig-name{font-size:9pt;font-weight:700}.sig-doc{font-size:8pt;color:#64748b}
         .footer{font-size:7.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:24px}
+        .ld-line{position:relative;text-align:right}.ld-line.is-removed{display:none!important}.sig-x-btn{display:none;position:absolute;top:-4px;right:0;width:22px;height:22px;line-height:20px;text-align:center;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#94a3b8;font-size:12px;font-weight:900;cursor:pointer;padding:0;z-index:5}.ld-line:hover .sig-x-btn{display:block}.sig-x-btn:hover{background:#fef2f2;border-color:#ef4444;color:#ef4444}@media print{.sig-x-btn{display:none!important}}
         @media print{body{padding:20px}}
       </style></head><body>
       <div class="hdr">
@@ -1468,13 +1498,16 @@ ${email ? '✉️ ' + email : ''}`;
       <div class="clause"><div class="clause-title">Cláusula 9 — Do Foro</div>
         <p>Fica eleito o foro da Comarca do prestador para dirimir quaisquer controvérsias decorrentes deste contrato.</p>
       </div>
+      <div class="ld-line" style="position:relative;text-align:right;">${SIG_X_BTN_HTML}<span style="display:inline-block;font-size:10pt;color:#334155;margin-top:26px" contenteditable="true">${EMPRESA.cidade}, ${dataPorExtenso()}.</span></div>
       <div class="sigs">
         <div class="sig"><div class="sig-line"></div>
         <div class="sig-name">${prefill.cliente||'CONTRATANTE'}</div>
-        <div class="sig-doc">${prefill.cpf_cnpj||''}</div></div>
+        <div class="sig-doc">${prefill.cpf_cnpj||''}</div>
+        <div class="sig-doc" style="font-weight:700;color:#1e3a5f">CONTRATANTE</div></div>
         <div class="sig"><div class="sig-line"></div>
         <div class="sig-name">${EMPRESA.nome}</div>
-        <div class="sig-doc">AGRAGEO CONSULTORIA | CNPJ: ${EMPRESA.cnpj}</div></div>
+        <div class="sig-doc">AGRAGEO CONSULTORIA | CNPJ: ${EMPRESA.cnpj}</div>
+        <div class="sig-doc" style="font-weight:700;color:#1e3a5f">CONTRATADO (PRESTADOR)</div></div>
       </div>
       <div class="footer">
         ${EMPRESA.fantasia} | ${EMPRESA.endereco}, ${EMPRESA.cidade} | Celular: ${EMPRESA.celular} | E-mail: ${EMPRESA.email} | Site: ${EMPRESA.site}
@@ -1494,7 +1527,6 @@ ${email ? '✉️ ' + email : ''}`;
      📂 DOWNLOAD DE MODELO DE LAUDO WORD/LIBREOFFICE
   ═══════════════════════════════════════════════════════ */
   function baixarModeloLaudo() {
-    const data = new Date().toLocaleDateString('pt-BR');
     const html = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset='utf-8'><title>Laudo Técnico Multitemporal</title>
@@ -1547,7 +1579,7 @@ ${email ? '✉️ ' + email : ''}`;
         <p>Conforme o exposto, as análises de geoprocessamento infirmam a assertividade do embasamento punitivo da Fiscalização, servindo este Relatório Multitemporal e respectiva TRT (Termo de Responsabilidade Técnica CFT) de lastro para o competente pedido jurídico de Nulidade do Auto de Infração e imediato Desembargo da área em tela.</p>
 
         <div class="signature">
-          Várzea Grande - MT, ${data}<br><br>
+          ${EMPRESA.cidade}, ${dataPorExtenso()}<br><br>
           _______________________________________________________<br>
           <b>${EMPRESA.nome}</b><br>
           Técnico em Geoprocessamento / CFT Geologia<br>
@@ -2765,6 +2797,8 @@ ${email ? '✉️ ' + email : ''}`;
     gerarRecibo,
     gerarOS,
     gerarContratoRemote,
+
+    // Modelos WhatsApp
 
     // Serviços Remote
     renderRemote,

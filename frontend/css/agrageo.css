@@ -232,6 +232,12 @@
 .md-sig-line { border-top:1px solid #334155; margin-bottom:6px; }
 .md-sig-name { font-weight:700; font-size:9pt; }
 .md-sig-info { font-size:8pt; color:#64748b; }
+/* Botão "✕" — remove a linha de Local e Data do documento antes de imprimir/exportar (todos os módulos) */
+.sig-x-btn { display:none; position:absolute; top:-4px; right:0; width:22px; height:22px; line-height:20px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; background:#fff; color:#94a3b8; font-size:12px; font-weight:900; cursor:pointer; padding:0; z-index:5; }
+.sign-area:hover .sig-x-btn, .md-local-data:hover .sig-x-btn, .sig-place:hover .sig-x-btn, .ld-line:hover .sig-x-btn { display:block; }
+.sig-x-btn:hover { background:#fef2f2; border-color:#ef4444; color:#ef4444; }
+.ld-line.is-removed { display:none !important; }
+@media print{.sig-x-btn{display:none!important}}
 .md-footer { margin-top:28px; border-top:1px solid #e2e8f0; padding-top:8px; font-size:7.5pt; color:#94a3b8; text-align:center; }
 
 
@@ -481,7 +487,7 @@
 
   /* Quebras de página */
   h1, h2, h3, .md-h1, .md-h2 { page-break-after: avoid; }
-  table, tr, td, .md-cl, .md-grid2, .md-sigs, .md-meta { page-break-inside: avoid; }
+  table, tr, td, .md-cl, .md-grid2, .md-sigs, .md-local-data, .md-meta { page-break-inside: avoid; }
   div[style*="page-break-before: always"] { page-break-before: always !important; }
 
   @page { size: A4 portrait; margin: 15mm; }
