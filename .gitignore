@@ -1,0 +1,57 @@
+# ── OS & IDE ──
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+*.code-workspace
+
+# ── Environment ──
+.env
+.env.local
+.env.production
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+env/
+
+# ── Data (raw files are large) ──
+data/raw/
+data/processed/
+*.shp
+*.dbf
+*.shx
+*.prj
+*.cpg
+*.geojson
+!frontend/assets/**
+
+# ── Node ──
+node_modules/
+package-lock.json
+
+# ── Docker ──
+docker-compose.override.yml
+
+# ── Logs ──
+*.log
+logs/
+
+# ── Generated ──
+*.pdf
+reports/
+
+# ── GeoServer data ──
+geoserver/data_dir/
+
+# ── Supabase CLI temp (local state, must not be versioned) ──
+supabase/.temp/

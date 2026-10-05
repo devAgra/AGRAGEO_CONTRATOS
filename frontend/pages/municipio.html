@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HidroScanner — Detalhes do município">
+  <title>HidroScanner — Município</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/mapa.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <style>
+    .mun-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .mun-header .title-block h1 {
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mun-header .title-block .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .mun-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .mun-minimap {
+      height: 300px;
+      border-radius: var(--border-radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-default);
+    }
+
+    .deficit-visual {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 24px;
+      background: var(--surface-800);
+      border: 1px solid var(--border-default);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 24px;
+    }
+
+    .deficit-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .deficit-circle::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 6px solid var(--surface-600);
+    }
+
+    .deficit-circle .value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .deficit-circle .label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
+
+    .deficit-details {
+      flex: 1;
+    }
+
+    .deficit-details h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .deficit-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+
+    .deficit-bar {
+      height: 10px;
+      background: var(--surface-600);
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .deficit-bar .fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 1.2s ease;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .info-item {
+      padding: 16px;
+      background: var(--surface-800);
+      border: 1px solid var(--border-default);
+      border-radius: var(--border-radius-sm);
+    }
+
+    .info-item .info-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .info-item .info-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+      .mun-grid { grid-template-columns: 1fr; }
+      .deficit-visual { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="logo-icon">💧</div>
+      <span>HidroScanner</span>
+    </div>
+
+    <ul class="navbar-nav">
+      <li><a href="/pages/index.html" class="nav-link">🗺️ Mapa</a></li>
+      <li><a href="/pages/dashboard.html" class="nav-link">📊 Dashboard</a></li>
+      <li><a href="/pages/relatorio.html" class="nav-link">📄 Relatórios</a></li>
+    </ul>
+
+    <div class="navbar-user">
+      <div class="user-avatar" id="userAvatar"></div>
+    </div>
+
+    <div class="user-menu" id="userMenu">
+      <div style="padding: 12px 12px 8px; border-bottom: 1px solid var(--border-default); margin-bottom: 4px;">
+        <div style="font-weight: 600; font-size: 0.85rem;" id="menuUserName"></div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);" id="menuUserEmail"></div>
+      </div>
+      <button class="user-menu-item danger" onclick="HidroAuth.logout()">🚪 Sair</button>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <div class="page-wrapper">
+    <div class="page-content">
+      <!-- Header -->
+      <div class="mun-header">
+        <div class="title-block">
+          <h1 id="munTitle">📍 Carregando...</h1>
+          <p class="subtitle" id="munSubtitle"></p>
+        </div>
+        <div class="flex gap-8">
+          <button class="btn btn-outline btn-sm" onclick="history.back()">← Voltar</button>
+          <button class="btn btn-primary btn-sm" id="btnPDF">📄 Gerar Relatório PDF</button>
+        </div>
+      </div>
+
+      <!-- Info Grid -->
+      <div class="info-grid mb-24" id="infoGrid">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Deficit Analysis -->
+      <div class="deficit-visual" id="deficitSection">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Map + Chart -->
+      <div class="mun-grid">
+        <div>
+          <h3 style="margin-bottom: 12px;">🗺️ Localização dos Poços</h3>
+          <div class="mun-minimap" id="minimap"></div>
+        </div>
+        <div>
+          <div class="chart-card" style="height: 100%;">
+            <div class="chart-header">
+              <div class="chart-title"><span class="icon">📊</span> Poços por Situação</div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chartMunStatus"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wells Table -->
+      <div class="leads-section mt-24">
+        <div class="section-header">
+          <div class="section-title">📍 Poços Cadastrados</div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Outorga</th>
+                <th>Uso</th>
+                <th>Vazão (m³/h)</th>
+                <th>Prof. (m)</th>
+                <th>Situação</th>
+                <th>Fonte</th>
+                <th>Vencimento</th>
+              </tr>
+            </thead>
+            <tbody id="pocosTable">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    window.SUPABASE_URL = 'https://qwnkfznflwxzssgmzbor.supabase.co';
+    window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bmtmem5mbHd4enNzZ216Ym9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDA5MjgsImV4cCI6MjA4OTc3NjkyOH0.ahvZ0B9puVAAo5LKr0WctfRwJmdXi-eLgOEOxCHzbTA';
+  </script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/relatorios.js"></script>
+
+  <script>
+    if (!HidroAuth.requireAuth()) { /* redirected */ }
+
+    const user = HidroAuth.getUser();
+    document.getElementById('userAvatar').textContent = HidroAuth.getUserInitials();
+    document.getElementById('menuUserName').textContent = user?.name || '';
+    document.getElementById('menuUserEmail').textContent = user?.email || '';
+
+    document.getElementById('userAvatar').addEventListener('click', () => {
+      document.getElementById('userMenu').classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.navbar-user')) document.getElementById('userMenu').classList.remove('open');
+    });
+
+    // ── Get params from URL ──
+    const params = new URLSearchParams(window.location.search);
+    const codIbge = params.get('cod');
+    const nomeMun = params.get('nome');
+
+    async function loadPage() {
+      const searchName = nomeMun ? decodeURIComponent(nomeMun) : null;
+
+      if (!codIbge && !searchName) {
+        document.getElementById('munTitle').textContent = 'Município não especificado';
+        return;
+      }
+
+      // Try loading municipality data from Supabase (may not exist for all)
+      let mun = null;
+      if (codIbge) {
+        mun = await HidroAPI.getMunicipio(codIbge);
+      }
+
+      // Load wells — filter by name
+      const allPocos = await HidroAPI.getPocos();
+      const municipioNome = searchName || (mun ? mun.nome : null);
+
+      if (!municipioNome) {
+        document.getElementById('munTitle').textContent = 'Município não encontrado';
+        return;
+      }
+
+      const pocos = allPocos.filter(p =>
+        (p.municipio || '').toLowerCase() === municipioNome.toLowerCase()
+      );
+
+      if (pocos.length === 0) {
+        document.getElementById('munTitle').textContent = `📍 ${municipioNome}`;
+        document.getElementById('munSubtitle').textContent = 'Nenhum poço encontrado para este município';
+        document.getElementById('infoGrid').innerHTML = '';
+        document.getElementById('deficitSection').style.display = 'none';
+        document.getElementById('pocosTable').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum poço encontrado</td></tr>';
+        return;
+      }
+
+      // Header
+      document.getElementById('munTitle').textContent = `📍 ${municipioNome}`;
+      document.getElementById('munSubtitle').textContent = mun
+        ? `${mun.uf} | Código IBGE: ${mun.cod_ibge} | ${mun.area_km2.toLocaleString('pt-BR')} km²`
+        : `MT | Fonte: SIAGAS/SGB (CPRM)`;
+
+      // Info grid
+      const regulares = pocos.filter(p => p.situacao === 'Regular').length;
+      const irregulares = pocos.filter(p => p.situacao === 'Irregular').length;
+      const vencidos = pocos.filter(p => p.situacao === 'Vencido').length;
+      const vazaoMedia = pocos.reduce((s, p) => s + (parseFloat(p.vazao_m3h) || 0), 0) / pocos.length;
+      const profMedia = pocos.reduce((s, p) => s + (parseFloat(p.profundidade_m) || 0), 0) / pocos.length;
+
+      document.getElementById('infoGrid').innerHTML = `
+        <div class="info-item">
+          <div class="info-label">Total de Poços</div>
+          <div class="info-value">${pocos.length}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label" style="color:var(--success-500);">Regulares</div>
+          <div class="info-value" style="color:var(--success-500);">${regulares}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label" style="color:var(--danger-500);">Irregulares</div>
+          <div class="info-value" style="color:var(--danger-500);">${irregulares}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label" style="color:var(--warning-400);">Vencidos</div>
+          <div class="info-value" style="color:var(--warning-400);">${vencidos}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Vazão Média</div>
+          <div class="info-value">${vazaoMedia.toFixed(1)} m³/h</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Prof. Média</div>
+          <div class="info-value">${profMedia.toFixed(0)}m</div>
+        </div>
+      `;
+
+      // Deficit analysis
+      const pctIrreg = pocos.length > 0 ? Math.round((irregulares / pocos.length) * 100) : 0;
+      const color = pctIrreg > 40 ? 'var(--danger-500)' : pctIrreg > 20 ? 'var(--warning-400)' : 'var(--success-500)';
+      document.getElementById('deficitSection').innerHTML = `
+        <div class="deficit-circle">
+          <div class="value" style="color:${color}">${pctIrreg}%</div>
+          <div class="label">Irregularidade</div>
+        </div>
+        <div class="deficit-details">
+          <h3>Análise do Município</h3>
+          <div class="deficit-bar-label">
+            <span>Regulares: ${regulares}</span>
+            <span>Total: ${pocos.length}</span>
+          </div>
+          <div class="deficit-bar">
+            <div class="fill" style="width:${Math.min(100, (regulares / pocos.length) * 100)}%;background:${color};"></div>
+          </div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <span class="badge ${pctIrreg > 40 ? 'badge-danger' : pctIrreg > 20 ? 'badge-warning' : 'badge-success'}">Irregularidade ${pctIrreg}%</span>
+            <span class="badge badge-info">📊 Fonte: SIAGAS/SGB</span>
+          </div>
+        </div>
+      `;
+
+      // Mini map — center on average of poços coordinates
+      const avgLat = pocos.reduce((s, p) => s + (p.latitude || 0), 0) / pocos.length;
+      const avgLng = pocos.reduce((s, p) => s + (p.longitude || 0), 0) / pocos.length;
+      const minimap = L.map('minimap', { zoomControl: false }).setView([avgLat, avgLng], 11);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+      }).addTo(minimap);
+
+      pocos.forEach(p => {
+        if (!p.latitude || !p.longitude) return;
+        const c = p.situacao === 'Regular' ? '#22c55e' : p.situacao === 'Irregular' ? '#ef4444' : '#facc15';
+        L.circleMarker([p.latitude, p.longitude], {
+          radius: 5, fillColor: c, fillOpacity: 0.8, color: 'rgba(255,255,255,0.2)', weight: 1
+        }).addTo(minimap);
+      });
+
+      // Status chart
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+      Chart.defaults.font.family = "'Inter', sans-serif";
+
+      new Chart(document.getElementById('chartMunStatus'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Regular', 'Irregular', 'Vencido'],
+          datasets: [{
+            data: [regulares, irregulares, vencidos],
+            backgroundColor: ['rgba(34,197,94,0.8)', 'rgba(239,68,68,0.8)', 'rgba(250,204,21,0.8)'],
+            borderWidth: 0, hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '60%',
+          plugins: { legend: { position: 'bottom', labels: { padding: 16 } } }
+        }
+      });
+
+      // Poços table
+      document.getElementById('pocosTable').innerHTML = pocos.map(p => {
+        const statusColor = p.situacao === 'Regular' ? 'var(--success-500)' : p.situacao === 'Irregular' ? 'var(--danger-500)' : 'var(--warning-400)';
+        return `
+          <tr>
+            <td><strong>${p.numero_outorga || '—'}</strong></td>
+            <td>${p.uso_principal || '—'}</td>
+            <td>${p.vazao_m3h || '—'}</td>
+            <td>${p.profundidade_m || '—'}</td>
+            <td style="color:${statusColor};font-weight:600;">${p.situacao}</td>
+            <td>${p.fonte_dado || '—'}</td>
+            <td>${p.data_vencimento || '—'}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // PDF button
+      document.getElementById('btnPDF').onclick = () => {
+        HidroRelatorios.downloadPDF(codIbge || municipioNome, municipioNome);
+      };
+    }
+
+    loadPage();
+  </script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HidroScanner — Relatórios de análise hidrogeológica">
+  <title>HidroScanner — Relatórios</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <style>
+    .report-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 26, 0.92);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .report-modal.open {
+      display: flex;
+    }
+
+    .report-modal-content {
+      background: white;
+      border-radius: var(--border-radius-lg);
+      width: 100%;
+      max-width: 860px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .report-modal-close {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: flex-end;
+      padding: 12px 16px;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .report-modal-close button {
+      background: #f1f5f9;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .report-modal-close button:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .report-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .report-search {
+      flex: 1;
+      min-width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="logo-icon">💧</div>
+      <span>HidroScanner</span>
+    </div>
+
+    <ul class="navbar-nav">
+      <li><a href="/pages/index.html" class="nav-link">🗺️ Mapa</a></li>
+      <li><a href="/pages/dashboard.html" class="nav-link">📊 Dashboard</a></li>
+      <li><a href="/pages/relatorio.html" class="nav-link active">📄 Relatórios</a></li>
+    </ul>
+
+    <div class="navbar-user">
+      <div class="user-avatar" id="userAvatar"></div>
+    </div>
+
+    <div class="user-menu" id="userMenu">
+      <div style="padding: 12px 12px 8px; border-bottom: 1px solid var(--border-default); margin-bottom: 4px;">
+        <div style="font-weight: 600; font-size: 0.85rem;" id="menuUserName"></div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);" id="menuUserEmail"></div>
+      </div>
+      <button class="user-menu-item danger" onclick="HidroAuth.logout()">🚪 Sair</button>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <div class="page-wrapper">
+    <div class="page-content">
+      <!-- Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">📄 Relatórios</h1>
+          <p class="page-subtitle">Geração de relatórios de análise hidrogeológica por município</p>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="report-filters">
+        <div class="report-search">
+          <input type="text" class="form-input" id="searchReport" placeholder="🔍 Buscar município...">
+        </div>
+        <select class="form-select" id="filterPrioridade" style="width:200px;">
+          <option value="">Todas as prioridades</option>
+          <option value="Alta">🔴 Alta</option>
+          <option value="Média">🟡 Média</option>
+          <option value="Baixa">🟢 Baixa</option>
+        </select>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="summary-row">
+        <div class="summary-card">
+          <div class="summary-icon">🎯</div>
+          <div class="summary-value" id="totalLeads">—</div>
+          <div class="summary-label">Total de Leads</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">🔴</div>
+          <div class="summary-value" id="totalAlta">—</div>
+          <div class="summary-label">Alta Prioridade</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">📄</div>
+          <div class="summary-value" id="totalReports">—</div>
+          <div class="summary-label">Relatórios Disponíveis</div>
+        </div>
+      </div>
+
+      <!-- Lead/Report List -->
+      <div class="leads-section">
+        <div class="section-header">
+          <div class="section-title">🗂️ Leads por Município</div>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Município</th>
+                <th>Déficit (%)</th>
+                <th>Prioridade</th>
+                <th>Potencial</th>
+                <th>Outorgados</th>
+                <th>Estimados</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTableBody">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="card mt-24" style="border-left: 3px solid var(--warning-400);">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:1.5rem;">⚠️</span>
+          <div>
+            <h4 style="font-size:0.9rem;margin-bottom:4px;">Nota Técnica</h4>
+            <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;">
+              As estimativas de déficit de outorgas apresentadas são calculadas com base em dados públicos
+              da ANA, CPRM e IBGE e representam uma análise estatística regional. NÃO constituem confirmação
+              de irregularidade individual. A regularização de poços deve ser avaliada caso a caso por
+              profissional habilitado com emissão de ART.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Preview Modal -->
+  <div class="report-modal" id="reportModal">
+    <div class="report-modal-content">
+      <div class="report-modal-close">
+        <button onclick="HidroRelatorios.closeModal()">✕ Fechar</button>
+      </div>
+      <div id="reportContent"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    window.SUPABASE_URL = 'https://qwnkfznflwxzssgmzbor.supabase.co';
+    window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bmtmem5mbHd4enNzZ216Ym9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDA5MjgsImV4cCI6MjA4OTc3NjkyOH0.ahvZ0B9puVAAo5LKr0WctfRwJmdXi-eLgOEOxCHzbTA';
+  </script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/relatorios.js"></script>
+
+  <script>
+    if (!HidroAuth.requireAuth()) { /* redirected */ }
+
+    const user = HidroAuth.getUser();
+    document.getElementById('userAvatar').textContent = HidroAuth.getUserInitials();
+    document.getElementById('menuUserName').textContent = user?.name || '';
+    document.getElementById('menuUserEmail').textContent = user?.email || '';
+
+    document.getElementById('userAvatar').addEventListener('click', () => {
+      document.getElementById('userMenu').classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.navbar-user')) document.getElementById('userMenu').classList.remove('open');
+    });
+
+    // ── Load data ──
+    let allLeads = [];
+
+    async function loadPage() {
+      allLeads = await HidroAPI.getLeads();
+
+      document.getElementById('totalLeads').textContent = allLeads.length;
+      document.getElementById('totalAlta').textContent = allLeads.filter(l => l.prioridade === 'Alta').length;
+      document.getElementById('totalReports').textContent = allLeads.length;
+
+      renderTable(allLeads);
+    }
+
+    function renderTable(leads) {
+      const sorted = leads.sort((a, b) => {
+        const p = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
+        return (p[a.prioridade] || 3) - (p[b.prioridade] || 3);
+      });
+
+      const tbody = document.getElementById('reportsTableBody');
+      if (sorted.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum resultado encontrado</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = sorted.map(lead => {
+        const color = lead.perc_irregularidade > 40 ? 'var(--danger-500)' : lead.perc_irregularidade > 20 ? 'var(--warning-400)' : 'var(--success-500)';
+        const badgeClass = lead.prioridade === 'Alta' ? 'badge-danger' : lead.prioridade === 'Média' ? 'badge-warning' : 'badge-success';
+
+        return `
+          <tr>
+            <td><strong>${lead.nome_area}</strong></td>
+            <td><span style="color:${color};font-weight:700;">${lead.perc_irregularidade}%</span></td>
+            <td><span class="badge ${badgeClass}">${lead.prioridade}</span></td>
+            <td>${lead.potencial_hidrogeologico}</td>
+            <td>${lead.pocos_outorgados_raio}</td>
+            <td>${lead.pocos_estimados}</td>
+            <td>
+              <div class="flex gap-8">
+                <button class="btn btn-sm btn-primary" onclick="HidroRelatorios.downloadPDF(${lead.cod_ibge_municipio}, '${lead.nome_area}')">📄 PDF</button>
+                <button class="btn btn-sm btn-outline" onclick="HidroRelatorios.previewReport(${lead.cod_ibge_municipio})">👁️</button>
+                <a href="/pages/municipio.html?cod=${lead.cod_ibge_municipio}" class="btn btn-sm btn-outline">📊</a>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ── Search ──
+    document.getElementById('searchReport').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      const filtered = allLeads.filter(l => l.nome_area.toLowerCase().includes(q));
+      renderTable(filtered);
+    });
+
+    // ── Priority filter ──
+    document.getElementById('filterPrioridade').addEventListener('change', (e) => {
+      const val = e.target.value;
+      const search = document.getElementById('searchReport').value.toLowerCase();
+      let filtered = allLeads;
+      if (val) filtered = filtered.filter(l => l.prioridade === val);
+      if (search) filtered = filtered.filter(l => l.nome_area.toLowerCase().includes(search));
+      renderTable(filtered);
+    });
+
+    // ── Close modal on ESC ──
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') HidroRelatorios.closeModal();
+    });
+
+    // ── Close modal on backdrop click ──
+    document.getElementById('reportModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) HidroRelatorios.closeModal();
+    });
+
+    // ── Check for specific cod in URL ──
+    const params = new URLSearchParams(window.location.search);
+    const cod = params.get('cod');
+    if (cod) {
+      loadPage().then(() => {
+        HidroRelatorios.previewReport(parseInt(cod));
+      });
+    } else {
+      loadPage();
+    }
+  </script>
+</body>
+</html>

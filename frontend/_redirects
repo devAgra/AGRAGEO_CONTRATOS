@@ -1,0 +1,5 @@
+/ /pages/index.html 200
+/pages/login.html /pages/index.html 301
+/pages/dashboard.html /pages/index.html 301
+/pages/relatorio.html /pages/index.html 301
+/pages/municipio.html /pages/index.html 301

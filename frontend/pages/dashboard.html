@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HidroScanner — Dashboard de estatísticas e métricas hidrogeológicas">
+  <title>HidroScanner — Dashboard</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="logo-icon">💧</div>
+      <span>HidroScanner</span>
+    </div>
+
+    <ul class="navbar-nav">
+      <li><a href="/pages/index.html" class="nav-link" id="navMapa">🗺️ Mapa</a></li>
+      <li><a href="/pages/dashboard.html" class="nav-link active" id="navDash">📊 Dashboard</a></li>
+      <li><a href="/pages/relatorio.html" class="nav-link" id="navRelat">📄 Relatórios</a></li>
+    </ul>
+
+    <div class="navbar-user">
+      <div class="user-avatar" id="userAvatar" title="Menu do usuário"></div>
+    </div>
+
+    <div class="user-menu" id="userMenu">
+      <div style="padding: 12px 12px 8px; border-bottom: 1px solid var(--border-default); margin-bottom: 4px;">
+        <div style="font-weight: 600; font-size: 0.85rem;" id="menuUserName"></div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);" id="menuUserEmail"></div>
+      </div>
+      <button class="user-menu-item danger" onclick="HidroAuth.logout()">🚪 Sair</button>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <div class="page-wrapper">
+    <div class="dashboard-content">
+      <!-- Header -->
+      <div class="dashboard-header">
+        <div class="title-group">
+          <h1>📊 Dashboard</h1>
+          <p>Visão geral do cenário hidrogeológico — Mato Grosso</p>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-outline btn-sm" onclick="window.location.href='/pages/relatorio.html'">📄 Relatórios</button>
+          <button class="btn btn-primary btn-sm" onclick="window.location.href='/pages/index.html'">🗺️ Ver no Mapa</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon blue">📍</div>
+          <div class="kpi-info">
+            <div class="kpi-label">Total de Poços</div>
+            <div class="kpi-value" id="kpiTotalPocos">—</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon red">⚠️</div>
+          <div class="kpi-info">
+            <div class="kpi-label">Irregulares (EST.)</div>
+            <div class="kpi-value" id="kpiIrregulares">—</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon yellow">📉</div>
+          <div class="kpi-info">
+            <div class="kpi-label">Déficit Médio</div>
+            <div class="kpi-value" id="kpiAvgDeficit">—</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon teal">🎯</div>
+          <div class="kpi-info">
+            <div class="kpi-label">Leads Alta Prioridade</div>
+            <div class="kpi-value" id="kpiLeadsAlta">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-grid">
+        <!-- Wells by Municipality -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title"><span class="icon">📊</span> Poços por Município</div>
+              <div class="chart-subtitle">Top 10 municípios com mais poços cadastrados</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartMunicipio"></canvas>
+          </div>
+        </div>
+
+        <!-- Status Distribution -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title"><span class="icon">🎯</span> Situação das Outorgas</div>
+              <div class="chart-subtitle">Distribuição por status de regularidade</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartStatus"></canvas>
+          </div>
+        </div>
+
+        <!-- Deficit Analysis -->
+        <div class="chart-card full-width">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title"><span class="icon">📉</span> Análise de Déficit por Município</div>
+              <div class="chart-subtitle">Poços outorgados vs. estimados — Top 10 com maior déficit</div>
+            </div>
+          </div>
+          <div class="chart-container large">
+            <canvas id="chartDeficit"></canvas>
+          </div>
+        </div>
+
+        <!-- Use Type -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title"><span class="icon">💧</span> Uso Principal da Água</div>
+              <div class="chart-subtitle">Distribuição por tipo de uso</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartUso"></canvas>
+          </div>
+        </div>
+
+        <!-- Placeholder for future climate chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title"><span class="icon">🌧️</span> Índice de Stress Hídrico</div>
+              <div class="chart-subtitle">Por município — escala 0 (úmido) a 1 (seco)</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartStress"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leads Table -->
+      <div class="leads-section">
+        <div class="section-header">
+          <div class="section-title">🎯 Leads Gerados — Top Prioridades</div>
+          <button class="btn btn-sm btn-outline" onclick="window.location.href='/pages/relatorio.html'">Ver todos →</button>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Município</th>
+                <th>Outorgados</th>
+                <th>Estimados</th>
+                <th>% Irregular</th>
+                <th>Prioridade</th>
+                <th>Potencial</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="leadsTableBody">
+              <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    window.SUPABASE_URL = 'https://qwnkfznflwxzssgmzbor.supabase.co';
+    window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bmtmem5mbHd4enNzZ216Ym9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMDA5MjgsImV4cCI6MjA4OTc3NjkyOH0.ahvZ0B9puVAAo5LKr0WctfRwJmdXi-eLgOEOxCHzbTA';
+  </script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/dashboard.js"></script>
+
+  <script>
+    // ── Auth guard ──
+    if (!HidroAuth.requireAuth()) { /* redirected */ }
+
+    // ── User info ──
+    const user = HidroAuth.getUser();
+    document.getElementById('userAvatar').textContent = HidroAuth.getUserInitials();
+    document.getElementById('menuUserName').textContent = user?.name || '';
+    document.getElementById('menuUserEmail').textContent = user?.email || '';
+
+    document.getElementById('userAvatar').addEventListener('click', () => {
+      document.getElementById('userMenu').classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.navbar-user')) {
+        document.getElementById('userMenu').classList.remove('open');
+      }
+    });
+
+    // ── Stress hídrico chart (custom since not in dashboard module) ──
+    async function renderStressChart() {
+      const clima = await HidroAPI.getDadosClimaticos();
+      const ctx = document.getElementById('chartStress');
+      if (!ctx || !clima.length) return;
+
+      // Group by municipality, average stress
+      const grouped = {};
+      clima.forEach(c => {
+        if (!grouped[c.municipio]) grouped[c.municipio] = [];
+        grouped[c.municipio].push(c.indice_seca);
+      });
+
+      const labels = Object.keys(grouped);
+      const values = labels.map(l => {
+        const avg = grouped[l].reduce((a, b) => a + b, 0) / grouped[l].length;
+        return Math.round(avg * 100) / 100;
+      });
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Índice de Seca',
+            data: values,
+            backgroundColor: values.map(v =>
+              v > 0.5 ? 'rgba(239, 68, 68, 0.6)' :
+              v > 0.3 ? 'rgba(250, 204, 21, 0.6)' :
+              'rgba(34, 197, 94, 0.6)'
+            ),
+            borderRadius: 4,
+            barThickness: 24
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              min: 0, max: 1,
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { font: { size: 11 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10 }, maxRotation: 45 }
+            }
+          }
+        }
+      });
+    }
+
+    // ── Init ──
+    HidroDashboard.init();
+    renderStressChart();
+  </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+# ============================================
+# HidroScanner — Docker Compose
+# Stack completa: Frontend + ETL
+# Backend = Supabase (externo)
+# ============================================
+
+version: '3.8'
+
+services:
+  # ── Frontend (static files via Nginx) ──
+  frontend:
+    image: nginx:1.25-alpine
+    container_name: hidroscanner-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
+  # ── ETL Pipeline (Python scheduler) ──
+  etl:
+    build:
+      context: ./etl
+      dockerfile: Dockerfile
+    container_name: hidroscanner-etl
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    depends_on:
+      - frontend
+
+  # ── GeoServer (optional — WMS layers) ──
+  # geoserver:
+  #   image: kartoza/geoserver:2.25.0
+  #   container_name: hidroscanner-geoserver
+  #   ports:
+  #     - "8181:8080"
+  #   environment:
+  #     - GEOSERVER_ADMIN_USER=${GEOSERVER_USER:-admin}
+  #     - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_PASS:-geoserver}
+  #   volumes:
+  #     - geoserver-data:/opt/geoserver/data_dir
+  #   restart: unless-stopped
+
+# volumes:
+#   geoserver-data:
