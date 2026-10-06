@@ -1,44 +1,23 @@
-const CACHE_NAME = 'hidroscanner-v4.1';
+// Agrageo Suite — service worker desativado (v5.0)
+// Remove qualquer cache antigo instalado por versões anteriores e deixa o
+// navegador sempre buscar os arquivos atualizados do Netlify.
+const CACHE_PREFIXES = ['hidroscanner', 'agrageo'];
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      // Usar a estrutura de pastas correta do frontend
-      return cache.addAll([
-        './index.html',
-        '../css/style.css',
-        '../js/mapa.js',
-        '../js/agrageo.js',
-        '../js/empresarial.js',
-        '../js/diario.js',
-        '../js/cnpj.js',
-        '../js/pipeline.js',
-        '../js/alertas.js',
-        '../assets/logo-agrageo.png'
-      ]).catch(err => console.warn('[PWA] Fallback de offline falhou parcialmente:', err));
-    })
-  );
-  self.skipWaiting();
-});
+self.addEventListener('install', () => self.skipWaiting());
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      );
-    })
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => CACHE_PREFIXES.some(p => k.startsWith(p))).map(k => caches.delete(k))
+      ))
+      .then(() => self.registration.scope)
+      .then(scope => fetch(scope + 'pages/index.html', { cache: 'no-store' }).catch(() => null))
+      .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', e => {
-  // Ignora requisições de API (Receita, GeoServers) no cache
-  if (e.request.url.includes('api') || e.request.url.includes('geoserver') || e.request.url.includes('nominatim')) {
-    e.respondWith(fetch(e.request));
-    return;
-  }
-  
-  e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request))
-  );
+self.addEventListener('fetch', (event) => {
+  // Nunca serve cache: delega direto para a rede.
+  event.respondWith(fetch(event.request));
 });
