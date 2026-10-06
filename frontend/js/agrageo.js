@@ -2798,7 +2798,6 @@ ${email ? '✉️ ' + email : ''}`;
     gerarOS,
     gerarContratoRemote,
 
-    // Modelos WhatsApp
 
     // Serviços Remote
     renderRemote,
