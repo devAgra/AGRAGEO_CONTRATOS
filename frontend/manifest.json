@@ -1,0 +1,17 @@
+{
+  "name": "Agrageo Suite",
+  "short_name": "Agrageo Suite",
+  "description": "Sistema de Inteligência e CRM para Consultoria Ambiental e Hídrica",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/assets/logo-agrageo_1.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ],
+  "scope": "/"
+}
